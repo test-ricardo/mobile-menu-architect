@@ -22,6 +22,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const menuItems = [
   {
@@ -79,10 +80,13 @@ const menuItems = [
 
 export function AppSidebar() {
   const { state } = useSidebar();
+  const isMobile = useIsMobile();
   const location = useLocation();
   const [expandedGroups, setExpandedGroups] = useState<{ [key: string]: boolean }>({});
+  const [isHovered, setIsHovered] = useState(false);
 
   const isCollapsed = state === "collapsed";
+  const showText = isMobile || !isCollapsed || isHovered;
 
   const toggleGroup = (title: string) => {
     setExpandedGroups(prev => ({
@@ -104,16 +108,26 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar className="border-r border-gray-200 bg-white">
+    <Sidebar 
+      className={`border-r border-gray-200 bg-white transition-all duration-300 ${
+        isMobile 
+          ? 'w-full' 
+          : isCollapsed && !isHovered 
+            ? 'w-[67px]' 
+            : 'w-64'
+      }`}
+      onMouseEnter={() => !isMobile && setIsHovered(true)}
+      onMouseLeave={() => !isMobile && setIsHovered(false)}
+    >
       <SidebarContent className="px-0">
         {/* Header */}
-        <div className={`p-4 border-b border-gray-200 ${isCollapsed ? 'px-2' : ''}`}>
+        <div className={`p-4 border-b border-gray-200 ${!showText ? 'px-2' : ''}`}>
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
               <div className="w-4 h-4 bg-white rounded-sm"></div>
             </div>
-            {!isCollapsed && (
-              <span className="text-lg font-semibold text-gray-800">BC Sistemas</span>
+            {showText && (
+              <span className="text-lg font-semibold text-gray-800 whitespace-nowrap">BC Sistemas</span>
             )}
           </div>
         </div>
@@ -134,19 +148,19 @@ export function AppSidebar() {
                             ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-500' 
                             : 'hover:bg-gray-50 text-gray-700'
                           }
-                          ${isCollapsed ? 'px-2' : 'px-3'}
+                          ${!showText ? 'px-2 justify-center' : 'px-3'}
                         `}
                         onClick={() => item.children && toggleGroup(item.title)}
                       >
                         {item.children ? (
-                          <div className="flex items-center justify-between w-full">
+                          <div className={`flex items-center ${showText ? 'justify-between' : 'justify-center'} w-full`}>
                             <div className="flex items-center">
-                              <item.icon className={`${isCollapsed ? 'h-5 w-5' : 'h-4 w-4 mr-3'} flex-shrink-0`} />
-                              {!isCollapsed && (
+                              <item.icon className={`${!showText ? 'h-5 w-5' : 'h-4 w-4 mr-3'} flex-shrink-0`} />
+                              {showText && (
                                 <span className="text-sm font-medium truncate">{item.title}</span>
                               )}
                             </div>
-                            {!isCollapsed && item.children && (
+                            {showText && item.children && (
                               <ChevronRight className={`h-3 w-3 transition-transform duration-200 ${
                                 expandedGroups[item.title] ? 'rotate-90' : ''
                               }`} />
@@ -154,8 +168,8 @@ export function AppSidebar() {
                           </div>
                         ) : (
                           <NavLink to={item.url} className="flex items-center w-full">
-                            <item.icon className={`${isCollapsed ? 'h-5 w-5' : 'h-4 w-4 mr-3'} flex-shrink-0`} />
-                            {!isCollapsed && (
+                            <item.icon className={`${!showText ? 'h-5 w-5' : 'h-4 w-4 mr-3'} flex-shrink-0`} />
+                            {showText && (
                               <span className="text-sm font-medium truncate">{item.title}</span>
                             )}
                           </NavLink>
@@ -163,7 +177,7 @@ export function AppSidebar() {
                       </SidebarMenuButton>
 
                       {/* Submenu */}
-                      {item.children && !isCollapsed && expandedGroups[item.title] && (
+                      {item.children && showText && expandedGroups[item.title] && (
                         <div className="ml-6 space-y-1 border-l-2 border-gray-100 pl-4">
                           {item.children.map((child) => (
                             <SidebarMenuButton key={child.title} asChild>
