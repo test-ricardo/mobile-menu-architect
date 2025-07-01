@@ -3,27 +3,31 @@ import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
   Menu, 
-  Bell, 
-  User 
+  Package,
+  Truck,
+  ShoppingCart,
+  BarChart3,
+  Globe,
+  Users,
+  Settings,
+  ChevronRight
 } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
 
-// Mock icons for the menu items since we're limited to specific lucide icons
 const menuItems = [
   {
     title: 'Gestión de envíos',
     url: '/dashboard/envios',
-    icon: Menu,
+    icon: Truck,
     children: [
       { title: 'Seguimiento de envíos', url: '/dashboard/envios/seguimiento' },
       { title: 'Transportes', url: '/dashboard/envios/transportes' },
@@ -33,7 +37,7 @@ const menuItems = [
   {
     title: 'Productos',
     url: '/dashboard/productos',
-    icon: Menu,
+    icon: Package,
     children: [
       { title: 'Catálogo', url: '/dashboard/productos/catalogo' },
       { title: 'Stock', url: '/dashboard/productos/stock' },
@@ -49,34 +53,36 @@ const menuItems = [
   {
     title: 'Gestión de compras y ventas',
     url: '/dashboard/compras-ventas',
-    icon: Menu,
+    icon: ShoppingCart,
   },
   {
     title: 'Control de stock',
     url: '/dashboard/stock',
-    icon: Menu,
+    icon: BarChart3,
   },
   {
     title: 'Sitio Web Ecommerce',
     url: '/dashboard/ecommerce',
-    icon: Menu,
+    icon: Globe,
   },
   {
     title: 'Panel de clientes',
     url: '/dashboard/clientes',
-    icon: Menu,
+    icon: Users,
   },
   {
     title: 'Administración y finanzas',
     url: '/dashboard/admin',
-    icon: Menu,
+    icon: Settings,
   },
 ];
 
 export function AppSidebar() {
-  const { collapsed } = useSidebar();
+  const { state } = useSidebar();
   const location = useLocation();
   const [expandedGroups, setExpandedGroups] = useState<{ [key: string]: boolean }>({});
+
+  const isCollapsed = state === "collapsed";
 
   const toggleGroup = (title: string) => {
     setExpandedGroups(prev => ({
@@ -98,20 +104,15 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar
-      className={`transition-all duration-300 ${
-        collapsed ? 'w-16' : 'w-72'
-      } border-r border-gray-200 bg-white`}
-      collapsible
-    >
+    <Sidebar className="border-r border-gray-200 bg-white">
       <SidebarContent className="px-0">
         {/* Header */}
-        <div className={`p-4 border-b border-gray-200 ${collapsed ? 'px-2' : ''}`}>
+        <div className={`p-4 border-b border-gray-200 ${isCollapsed ? 'px-2' : ''}`}>
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
               <div className="w-4 h-4 bg-white rounded-sm"></div>
             </div>
-            {!collapsed && (
+            {!isCollapsed && (
               <span className="text-lg font-semibold text-gray-800">BC Sistemas</span>
             )}
           </div>
@@ -133,30 +134,28 @@ export function AppSidebar() {
                             ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-500' 
                             : 'hover:bg-gray-50 text-gray-700'
                           }
-                          ${collapsed ? 'px-2' : 'px-3'}
+                          ${isCollapsed ? 'px-2' : 'px-3'}
                         `}
                         onClick={() => item.children && toggleGroup(item.title)}
                       >
                         {item.children ? (
                           <div className="flex items-center justify-between w-full">
                             <div className="flex items-center">
-                              <item.icon className={`${collapsed ? 'h-5 w-5' : 'h-4 w-4 mr-3'} flex-shrink-0`} />
-                              {!collapsed && (
+                              <item.icon className={`${isCollapsed ? 'h-5 w-5' : 'h-4 w-4 mr-3'} flex-shrink-0`} />
+                              {!isCollapsed && (
                                 <span className="text-sm font-medium truncate">{item.title}</span>
                               )}
                             </div>
-                            {!collapsed && item.children && (
-                              <div className={`transition-transform duration-200 ${
+                            {!isCollapsed && item.children && (
+                              <ChevronRight className={`h-3 w-3 transition-transform duration-200 ${
                                 expandedGroups[item.title] ? 'rotate-90' : ''
-                              }`}>
-                                <Menu className="h-3 w-3" />
-                              </div>
+                              }`} />
                             )}
                           </div>
                         ) : (
                           <NavLink to={item.url} className="flex items-center w-full">
-                            <item.icon className={`${collapsed ? 'h-5 w-5' : 'h-4 w-4 mr-3'} flex-shrink-0`} />
-                            {!collapsed && (
+                            <item.icon className={`${isCollapsed ? 'h-5 w-5' : 'h-4 w-4 mr-3'} flex-shrink-0`} />
+                            {!isCollapsed && (
                               <span className="text-sm font-medium truncate">{item.title}</span>
                             )}
                           </NavLink>
@@ -164,7 +163,7 @@ export function AppSidebar() {
                       </SidebarMenuButton>
 
                       {/* Submenu */}
-                      {item.children && !collapsed && expandedGroups[item.title] && (
+                      {item.children && !isCollapsed && expandedGroups[item.title] && (
                         <div className="ml-6 space-y-1 border-l-2 border-gray-100 pl-4">
                           {item.children.map((child) => (
                             <SidebarMenuButton key={child.title} asChild>
