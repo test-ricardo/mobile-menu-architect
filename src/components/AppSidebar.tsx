@@ -36,6 +36,11 @@ const menuItems = [
     ]
   },
   {
+    title: 'Transportes',
+    url: '/dashboard/transportes',
+    icon: Truck,
+  },
+  {
     title: 'Productos',
     url: '/dashboard/productos',
     icon: Package,
