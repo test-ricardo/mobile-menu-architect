@@ -27,14 +27,30 @@ export default {
                 primary1:{
                     DEFAULT: '#0D6EFD'
                 },
-				primary: {
-					DEFAULT: 'hsl(var(--primary))',
-					foreground: 'hsl(var(--primary-foreground))'
-				},
-				secondary: {
-					DEFAULT: 'hsl(var(--secondary))',
-					foreground: 'hsl(var(--secondary-foreground))'
-				},
+				primary2: { DEFAULT: '#3284FC'},
+				primary3: { DEFAULT: '#77ADFE'},
+                primary5: { DEFAULT: '#B2D1FE'},
+				neutral1: { DEFAULT: '#FFF'},
+				neutral2: { DEFAULT: '#F8F8F8'},
+				neutral3: { DEFAULT: '#E9E9E9'},
+				neutral4: { DEFAULT: '#BBBBBB'},
+				neutral5: { DEFAULT: '#565656'},
+				neutral6: { DEFAULT: '#2D2D2D'},
+                secondary5: { DEFAULT: '#DDD7FF'},
+                error: { DEFAULT: '#E35D6A'},
+				danger: { DEFAULT: '#FF0000'},
+				info: { DEFAULT: '#2196F3'},
+				success: { DEFAULT: '#4CAF50'},
+				warning: { DEFAULT: '#FFC107'},
+				muted: { DEFAULT: '#717B81'},
+				// primary: {
+				// 	DEFAULT: 'hsl(var(--primary))',
+				// 	foreground: 'hsl(var(--primary-foreground))'
+				// },
+				// secondary: {
+				// 	DEFAULT: 'hsl(var(--secondary))',
+				// 	foreground: 'hsl(var(--secondary-foreground))'
+				// },
 				destructive: {
 					DEFAULT: 'hsl(var(--destructive))',
 					foreground: 'hsl(var(--destructive-foreground))'

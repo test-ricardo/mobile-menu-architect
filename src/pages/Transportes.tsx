@@ -1,199 +1,348 @@
 
 import React, { useState } from 'react';
+import { useDialog } from '@/contexts/DialogContext';
 import { useTransportes } from '@/hooks/useTransportes';
 import { TransportesList } from '@/components/transportes/TransportesList';
 import { TransportesPagination } from '@/components/transportes/TransportesPagination';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Check, ChevronsUpDown, Plus, MoreVertical, X } from 'lucide-react';
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter, DialogClose, DialogTitle } from '@/components/ui/dialog';
 import api from '@/hooks/useApi';
 import { toast } from '@/hooks/use-toast';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
+import { Zone, Transporte } from '@/types/transporte';
+import { Badge } from '@/components/ui/badge';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 const Transportes: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const { data, isLoading, error, refetch } = useTransportes(currentPage);
+    const [currentPage, setCurrentPage] = useState(1);
+    const { data, isLoading, error, refetch } = useTransportes(currentPage);
 
-  // Estado para el formulario de transporte
-  const [fields, setFields] = useState({ name: '', phone: '' });
-  const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
-  const [loading, setLoading] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null); // null para crear, id para editar
+    // Estado para el formulario de transporte
+    const [fields, setFields] = useState({ name: '', phone: '' });
+    const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
+    const [loading, setLoading] = useState(false);
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [editId, setEditId] = useState<string | null>(null); // null para crear, id para editar
+    const [zones, setZones] = useState<Zone[]>([]);
+    const [selectedZoneIds, setSelectedZoneIds] = useState<number[]>([]);
+    const [comboOpen, setComboOpen] = useState(false);
+    const { showDialog } = useDialog();
 
-  // Maneja cambios en los inputs
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFields({ ...fields, [e.target.name]: e.target.value });
-    setErrors({ ...errors, [e.target.name]: undefined });
-  };
+    // Maneja cambios en los inputs
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFields({ ...fields, [e.target.name]: e.target.value });
+        setErrors({ ...errors, [e.target.name]: undefined });
+    };
 
-  // Maneja submit del formulario (crear o editar)
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setErrors({});
-    try {
-      let response;
-      if (editId) {
-        // Editar
-        response = await api.put(`/v1/transporte`, { ...fields, id: editId });
-      } else {
-        // Crear
-        response = await api.post(`/v1/transporte`, fields);
-      }
-      if (response.status === 200) {
-        toast({
-          title: editId ? 'Transporte actualizado correctamente' : 'Transporte creado correctamente',
-          description: editId ? 'Transporte actualizado' : 'Transporte creado',
-          variant: 'success',
-        });
-        setDialogOpen(false);
+    // Maneja submit del formulario (crear o editar)
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setErrors({});
+        try {
+            let response;
+            if (editId) {
+                // Editar
+                response = await api.put(`/v1/transporte/edit`, { 
+                    ...fields, 
+                    id: editId,
+                    zones: selectedZoneIds 
+                });
+            } else {
+                // Crear
+                response = await api.post(`/v1/transporte`, fields);
+            }
+            if (response.status === 200) {
+                toast({
+                    title: editId ? 'Transporte actualizado correctamente' : 'Transporte creado correctamente',
+                    description: editId ? 'Transporte actualizado' : 'Transporte creado',
+                    variant: 'default',
+                });
+                setDialogOpen(false);
+                setFields({ name: '', phone: '' });
+                setSelectedZoneIds([]);
+                setEditId(null);
+                refetch();
+            }
+        } catch (err: any) {
+            if (err.response?.status === 400) {
+                setErrors(err.response?.data?.data || {});
+            } else {
+                toast({
+                    title: 'Error',
+                    description: 'No se pudo guardar el transporte',
+                    variant: 'destructive',
+                });
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Para abrir el dialog en modo crear
+    const openCreateDialog = () => {
         setFields({ name: '', phone: '' });
         setEditId(null);
-        refetch();
-      }
-    } catch (err: any) {
-      if (err.response?.status === 400) {
-        setErrors(err.response?.data?.data || {});
-      } else {
-        toast({
-          title: 'Error',
-          description: 'No se pudo guardar el transporte',
-          variant: 'destructive',
+        setSelectedZoneIds([]);
+        setDialogOpen(true);
+    };
+
+    // Para abrir el dialog en modo editar (consulta la API por el id)
+    const openEditDialog = async (id: string) => {
+        setLoading(true);
+        try {
+            const response = await api.get(`/v1/transporte/edit/?id=${id}`);
+            const data = response.data?.data;
+            
+            // Guardar datos del transporte
+            setFields({ name: data.transport.name, phone: data.transport.phone });
+            setEditId(data.transport.id.toString());
+            
+            // Guardar zonas disponibles y seleccionadas
+            setZones(data.zones || []);
+            setSelectedZoneIds(data.transport_zones || []);
+            
+            setDialogOpen(true);
+        } catch (err) {
+            toast({
+                title: 'Error',
+                description: 'No se pudo obtener el transporte',
+                variant: 'destructive',
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Eliminar transporte usando DialogContext
+    const handleDelete = (id: string) => {
+        showDialog({
+            title: '¿Eliminar transporte?',
+            description: 'Esta acción no se puede deshacer.',
+            type: 'danger',
+            confirmText: 'Sí, eliminar',
+            cancelText: 'Cancelar',
+            onConfirm: async () => {
+                try {
+                    await api.delete(`/v1/transporte/${id}`);
+                    toast({
+                        title: 'Transporte eliminado',
+                        variant: 'success',
+                    });
+                    refetch();
+                } catch (err) {
+                    toast({
+                        title: 'Error',
+                        description: 'No se pudo eliminar el transporte',
+                        variant: 'destructive',
+                    });
+                }
+            },
         });
-      }
-    } finally {
-      setLoading(false);
+    };
+
+
+    if (isLoading) {
+        return (
+            <div className="p-6">
+                <div className="flex items-center justify-center h-64">
+                    <div className="text-gray-500">Cargando transportes...</div>
+                </div>
+            </div>
+        );
     }
-  };
 
-  // Para abrir el dialog en modo crear
-  const openCreateDialog = () => {
-    setFields({ name: '', phone: '' });
-    setEditId(null);
-    setDialogOpen(true);
-  };
+    if (error) {
+        return (
+            <div className="p-6">
+                <div className="flex items-center justify-center h-64">
+                    <div className="text-red-500">Error al cargar los transportes</div>
+                </div>
+            </div>
+        );
+    }
 
-  // Para abrir el dialog en modo editar (ejemplo, puedes conectar esto a la tabla)
-  const openEditDialog = (transporte: { id: string; name: string; phone: string }) => {
-    setFields({ name: transporte.name, phone: transporte.phone });
-    setEditId(transporte.id);
-    setDialogOpen(true);
-  };
+    const transportes = data?.data?.data?.data || [];
+    const paginationInfo = data?.data?.data;
 
-  if (isLoading) {
     return (
-      <div className="p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-gray-500">Cargando transportes...</div>
+        <div className="p-6">
+            <div className="flex justify-between items-center mb-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Transportes</h1>
+                </div>
+
+                {/* Botón para abrir Dialog */}
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                    <DialogTrigger asChild>
+                        <Button
+                            className="flex items-center space-x-2 bg-primary1 hover:bg-primary/80 font-medium text-[16px]"
+                            onClick={openCreateDialog}
+                        >
+                            <Plus className="h-4 w-4" />
+                            Crear Transporte
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle className="text-primary1 text-[16px] font-semibold mb-4">
+                                {editId ? 'Editar Transporte' : 'Crear Transporte'}
+                            </DialogTitle>
+                        </DialogHeader>
+                        <form
+                            id="dialog-form"
+                            className="flex flex-col gap-4"
+                            onSubmit={handleSubmit}
+                        >
+                            <div className="flex flex-col gap-4 md:flex-row">
+                                <div className="flex flex-col flex-1">
+                                    <label className="text-neutral5 text-[14px] mb-2">Nombre</label>
+                                    <input
+                                        className={`border rounded px-3 py-2 ${errors.name ? 'border-red-500' : ''}`}
+                                        placeholder="Nombre"
+                                        name="name"
+                                        value={fields.name}
+                                        onChange={handleChange}
+                                        disabled={loading}
+                                    />
+                                    {errors.name && (
+                                        <span className="text-red-500 text-xs mt-1">{errors.name}</span>
+                                    )}
+                                </div>
+                                <div className="flex flex-col flex-1">
+                                    <label className="text-neutral5 text-[14px] mb-2">Teléfono</label>
+                                    <input
+                                        className={`border rounded px-3 py-2 ${errors.phone ? 'border-red-500' : ''}`}
+                                        placeholder="Teléfono"
+                                        name="phone"
+                                        value={fields.phone}
+                                        onChange={handleChange}
+                                        disabled={loading}
+                                    />
+                                    {errors.phone && (
+                                        <span className="text-red-500 text-xs mt-1">{errors.phone}</span>
+                                    )}
+                                </div>
+                            </div>
+                            
+                            {editId && (
+                                <div className="mt-4">
+                                    <label className="text-neutral5 text-[14px] mb-2 block">Zonas Asignadas</label>
+                                    <div className="flex flex-wrap gap-2 mb-2">
+                                        {selectedZoneIds.length > 0 ? (
+                                            zones
+                                                .filter(zone => selectedZoneIds.includes(zone.id))
+                                                .map(zone => (
+                                                    <Badge key={zone.id} variant="secondary" className="flex items-center gap-1">
+                                                        {zone.name}
+                                                        <button 
+                                                            type="button"
+                                                            onClick={() => setSelectedZoneIds(prev => prev.filter(id => id !== zone.id))}
+                                                            className="focus:outline-none"
+                                                        >
+                                                            <X className="h-3 w-3" />
+                                                        </button>
+                                                    </Badge>
+                                                ))
+                                        ) : (
+                                            <div className="text-sm text-muted-foreground">No hay zonas asignadas</div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </form>
+                        <div className="mt-[20px] mb-[20px] flex justify-end">
+                            <Button className='text-[12px]' variant='default' color='primary1'>
+                                Relacionar zonas
+                            </Button>
+                        </div>
+                        {/* tabla de zonas relacionadas a este transporte */}
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Zonas relacionadas</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <TableRow>
+                                {selectedZoneIds.length > 0 ? (
+                                            zones
+                                                .filter(zone => selectedZoneIds.includes(zone.id))
+                                                .map(zone => (
+                                                    <TableCell key={zone.id} className="flex justify-between items-center gap-1">
+                                                        {zone.name}
+                                                        <Button 
+                                                            type="button"
+                                                            variant="delete"
+                                                            size="icon"
+                                                            onClick={() => setSelectedZoneIds(prev => prev.filter(id => id !== zone.id))}
+                                                            className="focus:outline-none"
+                                                        />
+                                                    </TableCell>
+                                                ))
+                                        ) : (
+                                            <TableCell className="text-sm text-muted">No hay zonas asignadas</TableCell>
+                                        )}
+                                    {/* <TableCell>Transporte 1</TableCell>
+                                    <TableCell className='flex gap-2'>
+                                        <Button variant="edit" size="sm" onClick={() => openEditDialog('1')} />
+                                        <Button variant="delete" size="sm" onClick={() => handleDelete('1')} />
+                                    </TableCell> */}
+
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                        <DialogFooter>
+                            {/* Dropdown menu con opcion de eliminar transporte */}
+                            <DialogClose asChild>
+                                <Button className="flex-grow" type="button" variant="secondary" disabled={loading}>Cancelar</Button>
+                            </DialogClose>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" type="button">
+                                        <MoreVertical className="w-5 h-5" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent side="top">
+                                    <DropdownMenuItem>Eliminar transporte</DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <Button className="flex-grow" variant='default' color='primary1' type="submit" form="dialog-form" disabled={loading}>
+                                {loading ? 'Guardando...' : 'Guardar'}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            </div>
+
+            {transportes.length > 0 ? (
+                <>
+                    <TransportesList 
+                        transportes={transportes} 
+                        onRowClick={(transporte) => openEditDialog(transporte.id.toString())} 
+                    />
+
+                    {paginationInfo && paginationInfo.last_page > 1 && (
+                        <TransportesPagination
+                            currentPage={paginationInfo.current_page}
+                            lastPage={paginationInfo.last_page}
+                            onPageChange={setCurrentPage}
+                        />
+                    )}
+                </>
+            ) : (
+                <div className="bg-white rounded-lg shadow-sm border p-12 text-center">
+                    <div className="text-gray-500">
+                        <div className="text-lg font-medium mb-2">No hay transportes</div>
+                        <div>No se encontraron transportes en el sistema</div>
+                    </div>
+                </div>
+            )}
         </div>
-      </div>
     );
-  }
-
-  if (error) {
-    return (
-      <div className="p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-red-500">Error al cargar los transportes</div>
-        </div>
-      </div>
-    );
-  }
-
-  const transportes = data?.data?.data?.data || [];
-  const paginationInfo = data?.data?.data;
-
-  return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Transportes</h1>
-        </div>
-
-        {/* Botón para abrir Dialog */}
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button
-              className="flex items-center space-x-2 bg-primary1 hover:bg-primary/80 font-medium text-[16px]"
-              onClick={openCreateDialog}
-            >
-              <Plus className="h-4 w-4" />
-              Crear Transporte
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <h2 className="text-primary1 text-[16px] font-semibold mb-4">
-                {editId ? 'Editar Transporte' : 'Crear Transporte'}
-              </h2>
-            </DialogHeader>
-            <form
-              className="flex flex-col gap-4 md:flex-row"
-              onSubmit={handleSubmit}
-            >
-              <div className="flex flex-col flex-1">
-                <label className="text-neutral5 text-[14px] mb-2">Nombre</label>
-                <input
-                  className={`border rounded px-3 py-2 ${errors.name ? 'border-red-500' : ''}`}
-                  placeholder="Nombre"
-                  name="name"
-                  value={fields.name}
-                  onChange={handleChange}
-                  disabled={loading}
-                />
-                {errors.name && (
-                  <span className="text-red-500 text-xs mt-1">{errors.name}</span>
-                )}
-              </div>
-              <div className="flex flex-col flex-1">
-                <label className="text-neutral5 text-[14px] mb-2">Teléfono</label>
-                <input
-                  className={`border rounded px-3 py-2 ${errors.phone ? 'border-red-500' : ''}`}
-                  placeholder="Teléfono"
-                  name="phone"
-                  value={fields.phone}
-                  onChange={handleChange}
-                  disabled={loading}
-                />
-                {errors.phone && (
-                  <span className="text-red-500 text-xs mt-1">{errors.phone}</span>
-                )}
-              </div>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button type="button" variant="outline" disabled={loading}>Cancelar</Button>
-                </DialogClose>
-                <Button type="submit" disabled={loading}>
-                  {loading ? 'Guardando...' : 'Guardar'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {transportes.length > 0 ? (
-        <>
-          <TransportesList transportes={transportes} />
-          
-          {paginationInfo && paginationInfo.last_page > 1 && (
-            <TransportesPagination
-              currentPage={paginationInfo.current_page}
-              lastPage={paginationInfo.last_page}
-              onPageChange={setCurrentPage}
-            />
-          )}
-        </>
-      ) : (
-        <div className="bg-white rounded-lg shadow-sm border p-12 text-center">
-          <div className="text-gray-500">
-            <div className="text-lg font-medium mb-2">No hay transportes</div>
-            <div>No se encontraron transportes en el sistema</div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
 };
 
 export default Transportes;
