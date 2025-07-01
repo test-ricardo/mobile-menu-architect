@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import api from '@/hooks/useApi';
 
 interface User {
   id: string;
@@ -24,46 +25,48 @@ export const useAuth = () => {
   return context;
 };
 
-// Usuario fake para testing
-const FAKE_USER = {
-  email: 'admin@test.com',
-  password: '123456',
-  userData: {
-    id: '1',
-    name: 'Usuario Admin',
-    email: 'admin@test.com'
-  }
-};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is logged in from localStorage
+    // Check if user and token are stored in localStorage
     const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
+    const savedToken = localStorage.getItem('token');
+    if (savedUser && savedToken) {
+      try {
+        setUser(JSON.parse(savedUser));
+        api.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
+      } catch (e) {
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        setUser(null);
+      }
     }
     setIsLoading(false);
   }, []);
 
   const login = async (email: string, password: string) => {
-    setIsLoading(true);
-    
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Validate with fake user
-    if (email === FAKE_USER.email && password === FAKE_USER.password) {
-      setUser(FAKE_USER.userData);
-      localStorage.setItem('user', JSON.stringify(FAKE_USER.userData));
+  setIsLoading(true);
+  try {
+    // Llamada a la API para autenticación
+    const response = await api.post('/login', { email, password });
+    const { access_token, usuario } = response.data;
+    setUser(usuario);
+    localStorage.setItem('user', JSON.stringify(usuario));
+    localStorage.setItem('token', access_token);
+    api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+  } catch (error: any) {
+    if (error.response && error.response.data && error.response.data.message) {
+      throw new Error(error.response.data.message);
     } else {
-      throw new Error('Credenciales inválidas. Use: admin@test.com / 123456');
+      throw new Error('Error de autenticación. Intenta nuevamente.');
     }
-    
+  } finally {
     setIsLoading(false);
-  };
+  }
+};
 
   const logout = () => {
     setUser(null);
