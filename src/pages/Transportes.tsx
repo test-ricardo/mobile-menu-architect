@@ -38,9 +38,6 @@ const Transportes: React.FC = () => {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Transportes</h1>
-          <p className="text-gray-600 mt-1">
-            Gestiona la información de los transportes
-          </p>
         </div>
         <Button className="flex items-center space-x-2">
           <Plus className="h-4 w-4" />

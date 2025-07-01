@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '@/hooks/useApi';
+import { setCookie, getCookie, deleteCookie } from '@/utils/cookie';
 
 interface User {
   id: string;
@@ -33,14 +34,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Check if user and token are stored in localStorage
     const savedUser = localStorage.getItem('user');
-    const savedToken = localStorage.getItem('token');
+    const savedToken = getCookie('token');
     if (savedUser && savedToken) {
       try {
         setUser(JSON.parse(savedUser));
         api.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
       } catch (e) {
         localStorage.removeItem('user');
-        localStorage.removeItem('token');
+        deleteCookie('token');
         setUser(null);
       }
     }
@@ -55,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { access_token, usuario } = response.data;
     setUser(usuario);
     localStorage.setItem('user', JSON.stringify(usuario));
-    localStorage.setItem('token', access_token);
+    setCookie('token', access_token, 7); // 7 días por defecto
     api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
   } catch (error: any) {
     if (error.response && error.response.data && error.response.data.message) {
@@ -71,7 +72,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
-  };
+    deleteCookie('token');
+  }
 
   return (
     <AuthContext.Provider value={{ user, login, logout, isLoading }}>
