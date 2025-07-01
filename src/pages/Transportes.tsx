@@ -81,11 +81,29 @@ const Transportes: React.FC = () => {
         }
     };
 
+    // Cargar zonas disponibles
+    const fetchZones = async () => {
+        try {
+            const response = await api.get('/v1/zones');
+            if (response.data?.data) {
+                setZones(response.data.data);
+            }
+        } catch (error) {
+            console.error('Error al cargar las zonas:', error);
+            toast({
+                title: 'Error',
+                description: 'No se pudieron cargar las zonas',
+                variant: 'destructive',
+            });
+        }
+    };
+
     // Para abrir el dialog en modo crear
-    const openCreateDialog = () => {
+    const openCreateDialog = async () => {
         setFields({ name: '', phone: '' });
         setEditId(null);
         setSelectedZoneIds([]);
+        await fetchZones(); // Cargar zonas al abrir el diálogo de creación
         setDialogOpen(true);
     };
 
@@ -93,8 +111,17 @@ const Transportes: React.FC = () => {
     const openEditDialog = async (id: string) => {
         setLoading(true);
         try {
-            const response = await api.get(`/v1/transporte/edit/?id=${id}`);
-            const data = response.data?.data;
+            // Cargar zonas y datos del transporte en paralelo
+            const [zonesResponse, transportResponse] = await Promise.all([
+                api.get('/v1/zones'),
+                api.get(`/v1/transporte/edit/?id=${id}`)
+            ]);
+            
+            if (zonesResponse.data?.data) {
+                setZones(zonesResponse.data.data);
+            }
+            
+            const data = transportResponse.data?.data;
             
             // Guardar datos del transporte
             setFields({ name: data.transport.name, phone: data.transport.phone });
@@ -227,37 +254,38 @@ const Transportes: React.FC = () => {
                                 </div>
                             </div>
                             
-                            {editId && (
-                                <div className="mt-4">
-                                    <label className="text-neutral5 text-[14px] mb-2 block">Zonas Asignadas</label>
-                                    <ZoneSelector
-                                        zones={zones}
-                                        selectedZoneIds={selectedZoneIds}
-                                        onAddZone={(zoneId) => setSelectedZoneIds(prev => [...prev, zoneId])}
-                                        onOpenZoneDialog={() => setZonesDialogOpen(true)}
-                                    />
-                                    <div className="flex flex-wrap gap-2 my-2">
-                                        {selectedZoneIds.length > 0 ? (
-                                            zones
-                                                .filter(zone => selectedZoneIds.includes(zone.id))
-                                                .map(zone => (
-                                                    <Badge key={zone.id} variant="secondary" className="flex items-center gap-1">
-                                                        {zone.name}
-                                                        <button 
-                                                            type="button"
-                                                            onClick={() => setSelectedZoneIds(prev => prev.filter(id => id !== zone.id))}
-                                                            className="focus:outline-none"
-                                                        >
-                                                            <X className="h-3 w-3" />
-                                                        </button>
-                                                    </Badge>
-                                                ))
-                                        ) : (
-                                            <div className="text-sm text-muted-foreground">No hay zonas asignadas</div>
-                                        )}
-                                    </div>
+                            <div className="mt-4">
+                                <label className="text-neutral5 text-[14px] mb-2 block">Zonas Asignadas</label>
+                                <ZoneSelector
+                                    zones={zones}
+                                    selectedZoneIds={selectedZoneIds}
+                                    onAddZone={(zoneId) => setSelectedZoneIds(prev => [...prev, zoneId])}
+                                    onOpenZoneDialog={() => setZonesDialogOpen(true)}
+                                />
+                                <div className="flex flex-wrap gap-2 my-2">
+                                    {selectedZoneIds.length > 0 ? (
+                                        zones
+                                            .filter(zone => selectedZoneIds.includes(zone.id))
+                                            .map(zone => (
+                                                <Badge key={zone.id} variant="secondary" className="flex items-center gap-1">
+                                                    {zone.name}
+                                                    <button 
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSelectedZoneIds(prev => prev.filter(id => id !== zone.id));
+                                                        }}
+                                                        className="focus:outline-none"
+                                                    >
+                                                        <X className="h-3 w-3" />
+                                                    </button>
+                                                </Badge>
+                                            ))
+                                    ) : (
+                                        <div className="text-sm text-muted-foreground">No hay zonas asignadas</div>
+                                    )}
                                 </div>
-                            )}
+                            </div>
                         </form>
                         <div className="mt-[20px] mb-[20px] flex justify-end">
                             {/* Dialog para relacionar zonas usando el componente modular */}

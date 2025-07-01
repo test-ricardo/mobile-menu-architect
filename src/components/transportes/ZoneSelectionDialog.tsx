@@ -46,8 +46,7 @@ export const ZoneSelectionDialog: React.FC<ZoneSelectionDialogProps> = ({
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-[60px]">Seleccionar</TableHead>
-                                <TableHead>Nombre de Zona</TableHead>
+                                <TableHead>Zonas</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -56,21 +55,27 @@ export const ZoneSelectionDialog: React.FC<ZoneSelectionDialogProps> = ({
                                     const isSelected = tempSelectedZones.includes(zone.id);
                                     return (
                                         <TableRow key={zone.id}>
-                                            <TableCell className="text-center">
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={isSelected}
-                                                    onChange={() => {
-                                                        setTempSelectedZones(prev => 
-                                                            isSelected 
-                                                                ? prev.filter(id => id !== zone.id) 
-                                                                : [...prev, zone.id]
-                                                        );
-                                                    }}
-                                                    className="h-4 w-4"
-                                                />
-                                            </TableCell>
-                                            <TableCell>{zone.name}</TableCell>
+                                            <TableCell>
+                                                <span className="w-full text-neutral6 text-[12px] flex gap-1">
+                                                    
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isSelected}
+                                                        onChange={() => {
+                                                            setTempSelectedZones(prev =>
+                                                                isSelected
+                                                                    ? prev.filter(id => id !== zone.id)
+                                                                    : [...prev, zone.id]
+                                                            );
+                                                        }}
+                                                        className="h-4 w-4"
+                                                    />
+                                                    {zone.name}
+                                                </span>
+                                                <span className="w-full text-neutral5 font-light text-[12px]">
+                                                    {zone.description}
+                                                </span>
+                                                </TableCell>
                                         </TableRow>
                                     );
                                 })

@@ -14,7 +14,7 @@ export const ZonesRelatedTable: React.FC<ZonesRelatedTableProps> = ({
     selectedZoneIds,
     onRemoveZone
 }) => {
-    return (
+    return (    
         <Table>
             <TableHeader>
                 <TableRow>
