@@ -5,16 +5,15 @@ import { useTransportes } from '@/hooks/useTransportes';
 import { TransportesList } from '@/components/transportes/TransportesList';
 import { TransportesPagination } from '@/components/transportes/TransportesPagination';
 import { Button } from '@/components/ui/button';
-import { Check, ChevronsUpDown, Plus, MoreVertical, X } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter, DialogClose, DialogTitle } from '@/components/ui/dialog';
 import api from '@/hooks/useApi';
 import { toast } from '@/hooks/use-toast';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
 import { Zone, Transporte } from '@/types/transporte';
 import { Badge } from '@/components/ui/badge';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ZoneSelectionDialog } from '@/components/transportes/ZoneSelectionDialog';
+import { ZonesRelatedTable } from '@/components/transportes/ZonesRelatedTable';
+import { ZoneSelector } from '@/components/transportes/ZoneSelector';
 
 const Transportes: React.FC = () => {
     const [currentPage, setCurrentPage] = useState(1);
@@ -28,7 +27,7 @@ const Transportes: React.FC = () => {
     const [editId, setEditId] = useState<string | null>(null); // null para crear, id para editar
     const [zones, setZones] = useState<Zone[]>([]);
     const [selectedZoneIds, setSelectedZoneIds] = useState<number[]>([]);
-    const [comboOpen, setComboOpen] = useState(false);
+    const [zonesDialogOpen, setZonesDialogOpen] = useState(false);
     const { showDialog } = useDialog();
 
     // Maneja cambios en los inputs
@@ -46,7 +45,7 @@ const Transportes: React.FC = () => {
             let response;
             if (editId) {
                 // Editar
-                response = await api.put(`/v1/transporte/edit`, { 
+                response = await api.put(`/v1/transporte`, { 
                     ...fields, 
                     id: editId,
                     zones: selectedZoneIds 
@@ -127,10 +126,10 @@ const Transportes: React.FC = () => {
             cancelText: 'Cancelar',
             onConfirm: async () => {
                 try {
-                    await api.delete(`/v1/transporte/${id}`);
+                    await api.delete(`/v1/transporte/?id=${id}`);
                     toast({
                         title: 'Transporte eliminado',
-                        variant: 'success',
+                        variant: 'default',
                     });
                     refetch();
                 } catch (err) {
@@ -231,7 +230,13 @@ const Transportes: React.FC = () => {
                             {editId && (
                                 <div className="mt-4">
                                     <label className="text-neutral5 text-[14px] mb-2 block">Zonas Asignadas</label>
-                                    <div className="flex flex-wrap gap-2 mb-2">
+                                    <ZoneSelector
+                                        zones={zones}
+                                        selectedZoneIds={selectedZoneIds}
+                                        onAddZone={(zoneId) => setSelectedZoneIds(prev => [...prev, zoneId])}
+                                        onOpenZoneDialog={() => setZonesDialogOpen(true)}
+                                    />
+                                    <div className="flex flex-wrap gap-2 my-2">
                                         {selectedZoneIds.length > 0 ? (
                                             zones
                                                 .filter(zone => selectedZoneIds.includes(zone.id))
@@ -255,52 +260,27 @@ const Transportes: React.FC = () => {
                             )}
                         </form>
                         <div className="mt-[20px] mb-[20px] flex justify-end">
-                            <Button className='text-[12px]' variant='default' color='primary1'>
-                                Relacionar zonas
-                            </Button>
+                            {/* Dialog para relacionar zonas usando el componente modular */}
+                            <ZoneSelectionDialog 
+                                open={zonesDialogOpen}
+                                onOpenChange={setZonesDialogOpen}
+                                zones={zones}
+                                selectedZones={selectedZoneIds}
+                                onSelectedZonesChange={setSelectedZoneIds}
+                            />
                         </div>
-                        {/* tabla de zonas relacionadas a este transporte */}
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Zonas relacionadas</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                <TableRow>
-                                {selectedZoneIds.length > 0 ? (
-                                            zones
-                                                .filter(zone => selectedZoneIds.includes(zone.id))
-                                                .map(zone => (
-                                                    <TableCell key={zone.id} className="flex justify-between items-center gap-1">
-                                                        {zone.name}
-                                                        <Button 
-                                                            type="button"
-                                                            variant="delete"
-                                                            size="icon"
-                                                            onClick={() => setSelectedZoneIds(prev => prev.filter(id => id !== zone.id))}
-                                                            className="focus:outline-none"
-                                                        />
-                                                    </TableCell>
-                                                ))
-                                        ) : (
-                                            <TableCell className="text-sm text-muted">No hay zonas asignadas</TableCell>
-                                        )}
-                                    {/* <TableCell>Transporte 1</TableCell>
-                                    <TableCell className='flex gap-2'>
-                                        <Button variant="edit" size="sm" onClick={() => openEditDialog('1')} />
-                                        <Button variant="delete" size="sm" onClick={() => handleDelete('1')} />
-                                    </TableCell> */}
-
-                                </TableRow>
-                            </TableBody>
-                        </Table>
+                        {/* Tabla de zonas relacionadas usando el componente modular */}
+                        <ZonesRelatedTable 
+                            zones={zones}
+                            selectedZoneIds={selectedZoneIds}
+                            onRemoveZone={(zoneId) => setSelectedZoneIds(prev => prev.filter(id => id !== zoneId))}
+                        />
                         <DialogFooter>
                             {/* Dropdown menu con opcion de eliminar transporte */}
                             <DialogClose asChild>
                                 <Button className="flex-grow" type="button" variant="secondary" disabled={loading}>Cancelar</Button>
                             </DialogClose>
-                            <DropdownMenu>
+                            {/* <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" size="icon" type="button">
                                         <MoreVertical className="w-5 h-5" />
@@ -309,7 +289,7 @@ const Transportes: React.FC = () => {
                                 <DropdownMenuContent side="top">
                                     <DropdownMenuItem>Eliminar transporte</DropdownMenuItem>
                                 </DropdownMenuContent>
-                            </DropdownMenu>
+                            </DropdownMenu> */}
                             <Button className="flex-grow" variant='default' color='primary1' type="submit" form="dialog-form" disabled={loading}>
                                 {loading ? 'Guardando...' : 'Guardar'}
                             </Button>
@@ -323,6 +303,7 @@ const Transportes: React.FC = () => {
                     <TransportesList 
                         transportes={transportes} 
                         onRowClick={(transporte) => openEditDialog(transporte.id.toString())} 
+                        handleDelete={(id) => handleDelete(id)}
                     />
 
                     {paginationInfo && paginationInfo.last_page > 1 && (

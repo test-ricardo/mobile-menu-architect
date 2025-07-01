@@ -14,9 +14,10 @@ import { Button } from '../ui/button';
 interface TransportesListProps {
     transportes: Transporte[];
     onRowClick?: (transporte: Transporte) => void;
+    handleDelete?: (id: string) => void;
 }
 
-export const TransportesList: React.FC<TransportesListProps> = ({ transportes, onRowClick }) => {
+export const TransportesList: React.FC<TransportesListProps> = ({ transportes, onRowClick, handleDelete }) => {
     return (
         <div className="rounded-lg shadow-sm border">
             <Table>
@@ -39,7 +40,17 @@ export const TransportesList: React.FC<TransportesListProps> = ({ transportes, o
                                         {transporte.name}
                                     </span>
                                 </span>
-                                <Button variant="edit" onClick={() => onRowClick(transporte)} />
+
+                                <span className="flex gap-2">
+                                    <Button variant="edit" onClick={() => onRowClick(transporte)} />
+                                    <Button 
+                                        variant="delete" 
+                                        onClick={(e) => {
+                                            e.stopPropagation(); // Detener la propagación del evento
+                                            handleDelete(transporte.id.toString());
+                                        }} 
+                                    />
+                                </span>
                             </TableCell>
                         </TableRow>
                     ))}
