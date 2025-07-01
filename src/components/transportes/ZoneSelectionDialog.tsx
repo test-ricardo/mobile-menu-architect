@@ -53,11 +53,25 @@ export const ZoneSelectionDialog: React.FC<ZoneSelectionDialogProps> = ({
                             {zones.length > 0 ? (
                                 zones.map(zone => {
                                     const isSelected = tempSelectedZones.includes(zone.id);
+                                    const toggleZoneSelection = (e: React.MouseEvent) => {
+                                        // Prevenir que el clic se propague si se hace clic en el checkbox directamente
+                                        if ((e.target as HTMLElement).tagName === 'INPUT') return;
+                                        
+                                        setTempSelectedZones(prev =>
+                                            isSelected
+                                                ? prev.filter(id => id !== zone.id)
+                                                : [...prev, zone.id]
+                                        );
+                                    };
+                                    
                                     return (
-                                        <TableRow key={zone.id}>
+                                        <TableRow 
+                                            key={zone.id}
+                                            onClick={toggleZoneSelection}
+                                            className="cursor-pointer hover:bg-gray-50"
+                                        >
                                             <TableCell>
-                                                <span className="w-full text-neutral6 text-[12px] flex gap-1">
-                                                    
+                                                <div className="flex items-start gap-2">
                                                     <input
                                                         type="checkbox"
                                                         checked={isSelected}
@@ -68,14 +82,19 @@ export const ZoneSelectionDialog: React.FC<ZoneSelectionDialogProps> = ({
                                                                     : [...prev, zone.id]
                                                             );
                                                         }}
-                                                        className="h-4 w-4"
+                                                        className="h-4 w-4 mt-1"
+                                                        onClick={(e) => e.stopPropagation()}
                                                     />
-                                                    {zone.name}
-                                                </span>
-                                                <span className="w-full text-neutral5 font-light text-[12px]">
-                                                    {zone.description}
-                                                </span>
-                                                </TableCell>
+                                                    <div>
+                                                        <div className="text-neutral6 text-[12px]">
+                                                            {zone.name}
+                                                        </div>
+                                                        <div className="text-neutral5 font-light text-[12px]">
+                                                            {zone.description}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </TableCell>
                                         </TableRow>
                                     );
                                 })

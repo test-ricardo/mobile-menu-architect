@@ -9,7 +9,7 @@ import { Plus, X } from 'lucide-react';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter, DialogClose, DialogTitle } from '@/components/ui/dialog';
 import api from '@/hooks/useApi';
 import { toast } from '@/hooks/use-toast';
-import { Zone, Transporte } from '@/types/transporte';
+import { Zone, Transporte, TransporteEditResponse } from '@/types/transporte';
 import { Badge } from '@/components/ui/badge';
 import { ZoneSelectionDialog } from '@/components/transportes/ZoneSelectionDialog';
 import { ZonesRelatedTable } from '@/components/transportes/ZonesRelatedTable';
@@ -81,29 +81,11 @@ const Transportes: React.FC = () => {
         }
     };
 
-    // Cargar zonas disponibles
-    const fetchZones = async () => {
-        try {
-            const response = await api.get('/v1/zones');
-            if (response.data?.data) {
-                setZones(response.data.data);
-            }
-        } catch (error) {
-            console.error('Error al cargar las zonas:', error);
-            toast({
-                title: 'Error',
-                description: 'No se pudieron cargar las zonas',
-                variant: 'destructive',
-            });
-        }
-    };
-
     // Para abrir el dialog en modo crear
     const openCreateDialog = async () => {
         setFields({ name: '', phone: '' });
         setEditId(null);
         setSelectedZoneIds([]);
-        await fetchZones(); // Cargar zonas al abrir el diálogo de creación
         setDialogOpen(true);
     };
 
@@ -111,25 +93,26 @@ const Transportes: React.FC = () => {
     const openEditDialog = async (id: string) => {
         setLoading(true);
         try {
-            // Cargar zonas y datos del transporte en paralelo
-            const [zonesResponse, transportResponse] = await Promise.all([
-                api.get('/v1/zones'),
-                api.get(`/v1/transporte/edit/?id=${id}`)
+            // Cargar datos del transporte con tipado fuerte
+            const [transportResponse] = await Promise.all([
+                api.get<TransporteEditResponse>(`/v1/transporte/edit/?id=${id}`)
             ]);
             
-            if (zonesResponse.data?.data) {
-                setZones(zonesResponse.data.data);
+            const responseData = transportResponse.data.data;
+            
+            if (responseData.zones) {
+                setZones(responseData.zones);
             }
             
-            const data = transportResponse.data?.data;
-            
             // Guardar datos del transporte
-            setFields({ name: data.transport.name, phone: data.transport.phone });
-            setEditId(data.transport.id.toString());
+            setFields({ 
+                name: responseData.transport.name, 
+                phone: responseData.transport.phone 
+            });
+            setEditId(responseData.transport.id.toString());
             
-            // Guardar zonas disponibles y seleccionadas
-            setZones(data.zones || []);
-            setSelectedZoneIds(data.transport_zones || []);
+            // Guardar zonas seleccionadas
+            setSelectedZoneIds(responseData.transport_zones || []);
             
             setDialogOpen(true);
         } catch (err) {
@@ -225,7 +208,7 @@ const Transportes: React.FC = () => {
                         >
                             <div className="flex flex-col gap-4 md:flex-row">
                                 <div className="flex flex-col flex-1">
-                                    <label className="text-neutral5 text-[14px] mb-2">Nombre</label>
+                                    <label htmlFor="name" className="text-neutral5 text-[14px] mb-2">Nombre</label>
                                     <input
                                         className={`border rounded px-3 py-2 ${errors.name ? 'border-red-500' : ''}`}
                                         placeholder="Nombre"
@@ -239,7 +222,7 @@ const Transportes: React.FC = () => {
                                     )}
                                 </div>
                                 <div className="flex flex-col flex-1">
-                                    <label className="text-neutral5 text-[14px] mb-2">Teléfono</label>
+                                    <label htmlFor="phone" className="text-neutral5 text-[14px] mb-2">Teléfono</label>
                                     <input
                                         className={`border rounded px-3 py-2 ${errors.phone ? 'border-red-500' : ''}`}
                                         placeholder="Teléfono"
@@ -255,36 +238,12 @@ const Transportes: React.FC = () => {
                             </div>
                             
                             <div className="mt-4">
-                                <label className="text-neutral5 text-[14px] mb-2 block">Zonas Asignadas</label>
                                 <ZoneSelector
                                     zones={zones}
                                     selectedZoneIds={selectedZoneIds}
                                     onAddZone={(zoneId) => setSelectedZoneIds(prev => [...prev, zoneId])}
                                     onOpenZoneDialog={() => setZonesDialogOpen(true)}
                                 />
-                                <div className="flex flex-wrap gap-2 my-2">
-                                    {selectedZoneIds.length > 0 ? (
-                                        zones
-                                            .filter(zone => selectedZoneIds.includes(zone.id))
-                                            .map(zone => (
-                                                <Badge key={zone.id} variant="secondary" className="flex items-center gap-1">
-                                                    {zone.name}
-                                                    <button 
-                                                        type="button"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setSelectedZoneIds(prev => prev.filter(id => id !== zone.id));
-                                                        }}
-                                                        className="focus:outline-none"
-                                                    >
-                                                        <X className="h-3 w-3" />
-                                                    </button>
-                                                </Badge>
-                                            ))
-                                    ) : (
-                                        <div className="text-sm text-muted-foreground">No hay zonas asignadas</div>
-                                    )}
-                                </div>
                             </div>
                         </form>
                         <div className="mt-[20px] mb-[20px] flex justify-end">

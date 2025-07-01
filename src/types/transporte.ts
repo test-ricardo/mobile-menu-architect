@@ -43,3 +43,15 @@ export interface Link {
     label:  string;
     active: boolean;
 }
+
+export interface TransporteEditResponse {
+    status: boolean;
+    message: null;
+    data: TransporteEditData;
+}
+
+interface TransporteEditData {
+    zones: Zone[];
+    transport: Transporte;
+    transport_zones: number[];
+}

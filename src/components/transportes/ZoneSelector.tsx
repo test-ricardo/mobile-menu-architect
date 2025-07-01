@@ -1,10 +1,6 @@
 import React from 'react';
 import { Zone } from '@/types/transporte';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
-import { Check, ChevronsUpDown } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface ZoneSelectorProps {
     zones: Zone[];
