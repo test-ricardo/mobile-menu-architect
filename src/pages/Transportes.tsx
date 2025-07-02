@@ -14,7 +14,20 @@ const Transportes: React.FC = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [searchValue, setSearchValue] = useState("");
     const { data, isLoading, error, refetch } = useTransportes(currentPage, searchValue);
-
+    const filterItems: InputSearchFilter[] = [
+                {
+                    id: 1,
+                    title: 'Zonas',
+                    items: [
+                        {
+                            id: 'zone',
+                            type: 'select',
+                            label: 'Zonas',
+                           values: [], // Puedes poblar los valores dinámicamente si lo necesitas
+                       },
+                   ],
+               },
+            ];
     // Estado para el formulario de transporte
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editId, setEditId] = useState<string | null>(null); // null para crear, id para editar
@@ -67,7 +80,6 @@ const Transportes: React.FC = () => {
     const [filters, setFilters] = useState<FilterComponent>({});
     const [stagedFilters, setStagedFilters] = useState<FilterComponent>({});
     const [showDialogFilters, setShowDialogFilters] = useState(false);
-    const filterItems: InputSearchFilter[] = []; // O tu estructura real de filtros
 
     // Handlers para eventos
     const handleClearFilters = () => setFilters({});
