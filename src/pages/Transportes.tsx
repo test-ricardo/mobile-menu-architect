@@ -8,10 +8,12 @@ import { TransportesPagination } from '@/components/transportes/TransportesPagin
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { TransporteDialog } from '@/components/transportes/TransporteDialog';
+import SearchWithFilters, { FilterComponent, InputSearchFilter } from '@/components/ui/SearchWithFilters';
 
 const Transportes: React.FC = () => {
     const [currentPage, setCurrentPage] = useState(1);
-    const { data, isLoading, error, refetch } = useTransportes(currentPage);
+    const [searchValue, setSearchValue] = useState("");
+    const { data, isLoading, error, refetch } = useTransportes(currentPage, searchValue);
 
     // Estado para el formulario de transporte
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -62,19 +64,25 @@ const Transportes: React.FC = () => {
     const transportes = data?.data?.data?.data || [];
     const paginationInfo = data?.data?.data;
 
+    const [filters, setFilters] = useState<FilterComponent>({});
+    const [stagedFilters, setStagedFilters] = useState<FilterComponent>({});
+    const [showDialogFilters, setShowDialogFilters] = useState(false);
+    const filterItems: InputSearchFilter[] = []; // O tu estructura real de filtros
+
+    // Handlers para eventos
+    const handleClearFilters = () => setFilters({});
+    const handleApplyFilters = () => setFilters(stagedFilters);
+    const handleRefreshData = () => refetch();
+    const handleSelectItem = (subItemId: string | number, value?: unknown) => {
+        // Implementar lógica según tu filtro
+    };
+    const handleClickAddBtn = (type: "desktop" | "mobile") => {
+        openCreateDialog();
+    };
+
     return (
         <div className="h-full flex flex-col p-3 overflow-hidden">
-            <div className="flex justify-between items-center mb-6">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Transportes</h1>
-                </div>
-                {/* Botón para abrir Dialog */}
-                <Button
-                    className="flex items-center space-x-2 bg-primary1 hover:bg-primary/80 font-medium text-[16px]"
-                    onClick={openCreateDialog}
-                >
-                    Crear Transporte
-                </Button>
+            <div className="mb-6">
                 <TransporteDialog
                     open={dialogOpen}
                     onOpenChange={(open) => {
@@ -83,6 +91,27 @@ const Transportes: React.FC = () => {
                     }}
                     editId={editId}
                     onSaved={refetch}
+                />
+                <SearchWithFilters
+                    items={filterItems}
+                    value={searchValue}
+                    onSearch={setSearchValue}
+                    filters={filters}
+                    onChangeFilters={setFilters}
+                    stagedFilters={stagedFilters}
+                    onChangeStagedFilters={setStagedFilters}
+                    showDialogFilters={showDialogFilters}
+                    setShowDialogFilters={setShowDialogFilters}
+                    inputPlaceholder="Buscar transporte...."
+                    title="Transportes"
+                    titleDialogFilters="Filtrar"
+                    textAddButton="Crear transporte"
+                    textAddButtonMobile="Crear transporte"
+                    onClearFilters={handleClearFilters}
+                    onApplyFilters={handleApplyFilters}
+                    onRefreshData={handleRefreshData}
+                    onSelectItem={handleSelectItem}
+                    onClickAddBtn={handleClickAddBtn}
                 />
             </div>
             <div className="flex flex-col flex-1">

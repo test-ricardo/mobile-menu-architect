@@ -33,12 +33,20 @@ interface SearchWithFiltersProps {
   onSearch: (value: string | null) => void;
   filters: FilterComponent;
   onChangeFilters: (filters: FilterComponent) => void;
+  stagedFilters?: FilterComponent;
+  onChangeStagedFilters?: (filters: FilterComponent) => void;
+  showDialogFilters?: boolean;
+  setShowDialogFilters?: (show: boolean) => void;
+  titleDialogFilters?: string;
+  textAddButton?: string;
+  textAddButtonMobile?: string;
   onClearFilters?: () => void;
   onApplyFilters?: () => void;
-  textAddButton?: string;
+  onRefreshData?: () => void;
+  onSelectItem?: (subItemId: string | number, value?: unknown) => void;
   onClickAddBtn?: (type: "desktop" | "mobile") => void;
-  // Puedes agregar más props según necesidad
 }
+
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -57,12 +65,29 @@ const SearchWithFilters: React.FC<SearchWithFiltersProps> = ({
   onSearch,
   filters,
   onChangeFilters,
+  stagedFilters,
+  onChangeStagedFilters,
+  showDialogFilters,
+  setShowDialogFilters,
+  titleDialogFilters = "Filtros avanzados",
+  textAddButton,
+  textAddButtonMobile,
   onClearFilters,
   onApplyFilters,
-  textAddButton,
+  onRefreshData,
+  onSelectItem,
   onClickAddBtn,
 }) => {
-  const [showFilters, setShowFilters] = useState(false);
+  // Si el control del modal viene por props, úsalo. Si no, usa estado interno.
+  const [internalShowFilters, setInternalShowFilters] = useState(false);
+  const showFilters = showDialogFilters !== undefined ? showDialogFilters : internalShowFilters;
+  const setShowFilters = setShowDialogFilters !== undefined ? setShowDialogFilters : setInternalShowFilters;
+
+  // stagedFilters controlado desde props o interno
+  const [internalStagedFilters, setInternalStagedFilters] = useState<FilterComponent>({});
+  const staged = stagedFilters !== undefined ? stagedFilters : internalStagedFilters;
+  const setStaged = onChangeStagedFilters !== undefined ? onChangeStagedFilters : setInternalStagedFilters;
+
   const [inputValue, setInputValue] = useState(value);
 
   // Debounce búsqueda
@@ -99,7 +124,8 @@ const SearchWithFilters: React.FC<SearchWithFiltersProps> = ({
         newFilters[key] = null;
     }
     onChangeFilters(newFilters);
-  }, [filters, items, onChangeFilters]);
+    if (onRefreshData) onRefreshData();
+  }, [filters, items, onChangeFilters, onRefreshData]);
 
   return (
     <div className="w-full">
@@ -146,13 +172,17 @@ const SearchWithFilters: React.FC<SearchWithFiltersProps> = ({
         {textAddButton && onClickAddBtn && (
           <Button className="hidden md:inline-flex ml-2" onClick={() => onClickAddBtn("desktop")}>{textAddButton}</Button>
         )}
+        {/* Botón de acción adicional (mobile) */}
+        {textAddButtonMobile && onClickAddBtn && (
+          <Button className="fixed bottom-4 right-4 md:hidden z-50" onClick={() => onClickAddBtn("mobile")}>{textAddButtonMobile}</Button>
+        )}
       </div>
       {/* Modal de filtros avanzados (placeholder, puedes usar un Dialog real) */}
       {showFilters && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md relative">
             <button onClick={() => setShowFilters(false)} className="absolute top-2 right-2">✕</button>
-            <div className="mb-4 font-semibold text-lg">Filtros avanzados</div>
+            <div className="mb-4 font-semibold text-lg">{titleDialogFilters}</div>
             {/* Aquí iría la UI de filtros avanzados, según items */}
             <div className="mb-4 text-sm text-gray-500">(Aquí se renderizan los controles de filtros avanzados según items)</div>
             <div className="flex justify-between gap-2 mt-4">
