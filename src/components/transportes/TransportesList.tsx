@@ -19,9 +19,9 @@ interface TransportesListProps {
 
 export const TransportesList: React.FC<TransportesListProps> = ({ transportes, onRowClick, handleDelete }) => {
     return (
-        <div className="rounded-lg shadow-sm border">
+        <div className="flex-1 rounded-lg shadow-sm border">
             <Table>
-                <TableHeader className='bg-neutral4 px-[15px] py-[5px]'>
+                <TableHeader className='sticky top-0 z-10 bg-neutral4 px-[15px] py-[5px]'>
                     <TableRow>
                         <TableHead>Transportes</TableHead>
                     </TableRow>
@@ -34,7 +34,7 @@ export const TransportesList: React.FC<TransportesListProps> = ({ transportes, o
                             onClick={onRowClick ? () => onRowClick(transporte) : undefined}
                         >
                             <TableCell className="flex justify-between items-center text-neutral5 italic text-[12px]">
-                                <span>
+                                <span className="flex gap-1">
                                     #{transporte.id}
                                     <span className="text-neutral6 me-[6px]">
                                         {transporte.name}
@@ -42,9 +42,10 @@ export const TransportesList: React.FC<TransportesListProps> = ({ transportes, o
                                 </span>
 
                                 <span className="flex gap-2">
-                                    <Button variant="edit" onClick={() => onRowClick(transporte)} />
+                                    <Button variant="edit" size="icon" onClick={() => onRowClick(transporte)} />
                                     <Button 
                                         variant="delete" 
+                                        size="icon"
                                         onClick={(e) => {
                                             e.stopPropagation(); // Detener la propagación del evento
                                             handleDelete(transporte.id.toString());

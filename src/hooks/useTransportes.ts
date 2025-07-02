@@ -7,7 +7,7 @@ export const useTransportes = (page: number = 1) => {
   return useQuery({
     queryKey: ['transportes', page],
     queryFn: async (): Promise<TransportesIndex> => {
-      const response = await api.get(`/v1/transporte?page=${page}`);
+      const response = await api.get(`/v1/transporte?page=${page}&per_page=10`);
       return response.data;
     },
   });

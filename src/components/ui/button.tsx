@@ -6,21 +6,21 @@ import { cn } from "@/lib/utils"
 import { Pencil, Trash } from "lucide-react"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary1 text-primary1-foreground hover:bg-primary1/90 text-neutral1",
+        default: "rounded-md bg-primary1 text-primary1-foreground hover:bg-primary1/90 text-neutral1",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+          "rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+          "rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground",
         secondary:
-          "bg-neutral1 text-neutral4 border border-neutral4 hover:bg-opacity-80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
-        edit: "bg-neutral4 text-primary1 hover:bg-neutral4/80",
-        delete: "bg-neutral4 text-danger hover:bg-neutral4/80",
+          "rounded-md bg-neutral1 text-neutral4 border border-neutral4 hover:bg-opacity-80",
+        ghost: "rounded-md hover:bg-accent hover:text-accent-foreground",
+        link: "rounded-md text-primary underline-offset-4 hover:underline",
+        edit: "rounded-full bg-neutral4 text-primary1 hover:bg-neutral4/80",
+        delete: "rounded-full bg-neutral4 text-danger hover:bg-neutral4/80",
       },
       size: {
         default: "h-10 px-4 py-2",
